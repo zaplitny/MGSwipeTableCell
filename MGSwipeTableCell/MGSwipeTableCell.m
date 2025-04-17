@@ -22,12 +22,6 @@
     return self;
 }
 
--(void) dealloc
-{
-    // Clear the weak reference to avoid any potential issues
-    _currentCell = nil;
-}
-
 -(UIView *) hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
     // Early return if event is nil
