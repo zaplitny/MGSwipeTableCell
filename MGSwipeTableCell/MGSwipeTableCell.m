@@ -30,35 +30,48 @@
 
 -(UIView *) hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
+    // Early return if event is nil
     if (event == nil) {
         return nil;
     }
-    if (!_currentCell) {
+    
+    // Create a strong reference to the current cell to prevent deallocation during method execution
+    MGSwipeTableCell *cell = _currentCell;
+    
+    // Check if the cell reference is still valid
+    if (!cell) {
         [self removeFromSuperview];
         return nil;
     }
     
-    // Add null check before accessing _currentCell properties
-    if (_currentCell.hidden) {
+    // Convert point to cell's coordinate system
+    CGPoint cellPoint = [self convertPoint:point toView:cell];
+    
+    // Check if the cell is hidden or if the point is within the cell's bounds
+    // Either case means we shouldn't handle the touch
+    if (cell.hidden || CGRectContainsPoint(cell.bounds, cellPoint)) {
         return nil;
     }
     
-    // Convert point safely and check bounds
-    CGPoint p = [self convertPoint:point toView:_currentCell];
-    if (CGRectContainsPoint(_currentCell.bounds, p)) {
-        return nil;
-    }
-    
+    // Determine if we should hide the swipe on tap
     BOOL hide = YES;
-    if (_currentCell && _currentCell.delegate && [_currentCell.delegate respondsToSelector:@selector(swipeTableCell:shouldHideSwipeOnTap:)]) {
-        hide = [_currentCell.delegate swipeTableCell:_currentCell shouldHideSwipeOnTap:p];
+    if (cell.delegate && [cell.delegate respondsToSelector:@selector(swipeTableCell:shouldHideSwipeOnTap:)]) {
+        hide = [cell.delegate swipeTableCell:cell shouldHideSwipeOnTap:cellPoint];
     }
     
-    if (hide && _currentCell) {
-        [_currentCell hideSwipeAnimated:YES];
+    // Hide the swipe if needed
+    if (hide) {
+        [cell hideSwipeAnimated:YES];
     }
     
-    return _currentCell.touchOnDismissSwipe ? nil : self;
+    // Return either nil or self based on the cell's touchOnDismissSwipe property
+    return cell.touchOnDismissSwipe ? nil : self;
+}
+
+-(void) dealloc
+{
+    // Clear the weak reference to avoid any potential issues
+    _currentCell = nil;
 }
 
 @end
