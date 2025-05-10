@@ -22,6 +22,12 @@
     return self;
 }
 
+-(void) dealloc
+{
+    // Clear the weak reference to avoid any potential issues
+    _currentCell = nil;
+}
+
 -(UIView *) hitTest:(CGPoint)point withEvent:(UIEvent *)event
 {
     if (event == nil) {
@@ -31,17 +37,27 @@
         [self removeFromSuperview];
         return nil;
     }
-    CGPoint p = [self convertPoint:point toView:_currentCell];
-    if (_currentCell && (_currentCell.hidden || CGRectContainsPoint(_currentCell.bounds, p))) {
+    
+    // Add null check before accessing _currentCell properties
+    if (_currentCell.hidden) {
         return nil;
     }
+    
+    // Convert point safely and check bounds
+    CGPoint p = [self convertPoint:point toView:_currentCell];
+    if (CGRectContainsPoint(_currentCell.bounds, p)) {
+        return nil;
+    }
+    
     BOOL hide = YES;
     if (_currentCell && _currentCell.delegate && [_currentCell.delegate respondsToSelector:@selector(swipeTableCell:shouldHideSwipeOnTap:)]) {
         hide = [_currentCell.delegate swipeTableCell:_currentCell shouldHideSwipeOnTap:p];
     }
-    if (hide) {
+    
+    if (hide && _currentCell) {
         [_currentCell hideSwipeAnimated:YES];
     }
+    
     return _currentCell.touchOnDismissSwipe ? nil : self;
 }
 
